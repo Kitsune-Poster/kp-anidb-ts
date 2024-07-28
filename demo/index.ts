@@ -1,4 +1,4 @@
-import { KSAniDB } from "../dist/index";
+import { KSAniDB } from "../src/index";
 import ConfigParser from "configparser";
 
 let config = new ConfigParser()
@@ -20,8 +20,9 @@ const main = async () => {
 
     await db.init()
 
-    const titles = db.searchTitle("utawareru")
-    console.log(titles)
+    const titles = db.searchTitle("Utawarerum")
+    const details = await titles[0].fetchDetails()
+    console.log(details.anime.creators[0].name[0].$.type)
 }
 
 main()

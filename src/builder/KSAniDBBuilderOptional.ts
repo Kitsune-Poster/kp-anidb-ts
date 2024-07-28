@@ -14,16 +14,11 @@ export class KSAniDBBuilderOptional{
     private cache: Cache = {
         path: "./cache"
     }
-    private getClient(){
-        return (this as any).builder.builder.client
-    }
-    private getClientVer(){
-        return (this as any).builder.clientver
-    }
-    private baseurl: string = `http://api.anidb.net:9001/httpapi?client=${this.getClient()}&clientver=${this.getClientVer()}&protover=${this.protover}`
 
-    setBaseUrl(url: string){
-        this.baseurl = url
+    private domain: string = `http://api.anidb.net:9001`
+
+    setDomain(url: string){
+        this.domain = url
         return this
     }
 
@@ -50,6 +45,13 @@ export class KSAniDBBuilderOptional{
     build(){
         const KSAniDBBuilderClientVer = (this as any).builder as any
         const KSAniDBBuilderClient = KSAniDBBuilderClientVer.builder as any
-        return new KSAniDB(KSAniDBBuilderClient.client, KSAniDBBuilderClientVer.clientver, this.protover, this.download, this.cache, this.baseurl)
+        return new KSAniDB({
+            client: KSAniDBBuilderClient.client,
+            clientver: KSAniDBBuilderClientVer.clientver,
+            protover: this.protover,
+            download: this.download,
+            cache: this.cache,
+            domain: this.domain
+        })
     }
 }

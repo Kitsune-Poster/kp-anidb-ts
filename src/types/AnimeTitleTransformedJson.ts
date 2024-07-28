@@ -1,7 +1,3 @@
-export type AnimeTitleTransformedJson = {
-    hash: number,
-    aid: number,
-    title: string,
-    type: string,
-    lang: string
-}[]
+import { AnimeTitle } from "../AnimeTitle";
+
+export type AnimeTitleTransformedJson = AnimeTitle[]

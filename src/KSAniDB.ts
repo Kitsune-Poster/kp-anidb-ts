@@ -3,13 +3,13 @@ import * as xml2js from 'xml2js'
 import {pipeline} from 'node:stream';
 import {promisify} from 'node:util'
 import zlib = require("node:zlib");
-import MiniSearch from 'minisearch'
+import MiniSearch, { SearchResult, Suggestion } from 'minisearch'
 import hash from 'hash-it';
 import { KSAniDBBuilderClient } from './builder/KSAniDBBuilderClient';
 import { AnimeTitleOriginalJson } from './types/AnimeTitleOriginalJson';
-import { Download } from './types/Download';
-import { Cache } from './types/Cache';
 import { AnimeTitleTransformedJson } from './types/AnimeTitleTransformedJson';
+import { AnimeTitle } from './AnimeTitle';
+import { AniDBRequester } from './AniDBRequester';
 
 const streamPipeline = promisify(pipeline);
 
@@ -29,7 +29,7 @@ const streamPipeline = promisify(pipeline);
  * console.log(titles)
  * ```
  */
-export class KSAniDB{
+export class KSAniDB extends AniDBRequester {
     /**
      * A builder utility to create a new KSAniDB instance
      * @returns A new KSAniDBBuilderClient instance to build a new KSAniDB instance
@@ -38,23 +38,6 @@ export class KSAniDB{
         return new KSAniDBBuilderClient()
     }
 
-    constructor(
-        private client: string,
-        private clientver: number,
-        private protover: number,
-        private download: Download,
-        private cache: Cache,
-        private baseurl: string
-    ){
-        function removeSlash(path: string){
-            return path.replace(/\/$/, "")
-        }
-
-        this.download.path = removeSlash(this.download.path)
-        this.cache.path = removeSlash(this.cache.path)
-    }
-
-    private baseUrl = `http://api.anidb.net:9001/httpapi?client=${this.client}&clientver=${this.clientver}&protover=${this.protover}`
     private isInitialized = false
     private inMemoryJson: AnimeTitleTransformedJson = []
     private miniSearch = new MiniSearch({
@@ -84,22 +67,18 @@ export class KSAniDB{
             let aid = parseInt(anime.$.aid)
             for(let title of anime.title){
                 let id = hash({aid: aid, title: title._, type: title.$.type, lang: title.$["xml:lang"]})
-                transformed.push({
-                    hash: id,
-                    aid: aid,
-                    title: title._,
-                    type: title.$.type,
-                    lang: title.$["xml:lang"]
-                })
+                transformed.push(new AnimeTitle(
+                    this.config,
+                    id,
+                    aid,
+                    title._,
+                    title.$.type,
+                    title.$["xml:lang"]
+                ))
             }
         }
 
         return transformed
-    }
-
-    private async reinit(){
-        this.isInitialized = false
-        this.init()
     }
 
     private checkInit(){
@@ -108,28 +87,18 @@ export class KSAniDB{
         }
     }
 
-    private isUpdateNeeded(){
-        let now = new Date()
-        let filename = "anime-titles"
-        let filenamejson = filename + ".json"
-        let nowDownloadPath = this.download.path + "/" + now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "/"
-
-        if(!fs.existsSync(nowDownloadPath + filenamejson)){
-            return true
-        }
-
-        return false
-    }
-
-    private checkForUpdate(){
-        if(this.isUpdateNeeded()){
-            this.reinit()
+    private assureAidPresence(){
+        if(!fs.existsSync(this.getNowCachePath() + "anime-titles.json")){
+            this.isInitialized = false
+            this.inMemoryJson = []
+            this.miniSearch.removeAll()
+            this.init()
         }
     }
 
     private checkAll(){
         this.checkInit()
-        this.checkForUpdate()
+        this.assureAidPresence()
     }
 
     /**
@@ -142,61 +111,67 @@ export class KSAniDB{
      * @returns The path to the anime-titles.json file
      */
     private async downloadAid(): Promise<string>{
-        let now = new Date()
         let filename = "anime-titles"
         let filenamexml = filename + ".xml"
         let filenamegz = filenamexml + ".gz"
         let filenamejson = filename + ".json"
-        let nowDownloadPath = this.download.path + "/" + now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "/"
 
-        if(!fs.existsSync(this.download.path)) fs.mkdirSync(this.download.path)
-        if(!fs.existsSync(nowDownloadPath)) fs.mkdirSync(nowDownloadPath)
+        if(!fs.existsSync(this.config.download.path)) fs.mkdirSync(this.config.download.path)
+        if(!fs.existsSync(this.getNowCachePath())) fs.mkdirSync(this.getNowCachePath())
 
         //if gz file does not exist, download it
-        if(!fs.existsSync(nowDownloadPath + filenamegz)){
-            const response = await fetch(this.download.url)
+        if(!fs.existsSync(this.getNowCachePath() + filenamegz)){
+            const response = await fetch(this.config.download.url)
             if(!response.ok) throw new Error(`unexpected response ${response.statusText}`)
             const body = response.body
             if(!body) throw new Error("No body")
 
-            const writer = fs.createWriteStream(nowDownloadPath + filenamegz)
+            const writer = fs.createWriteStream(this.getNowCachePath() + filenamegz)
 
             await streamPipeline(response.body, writer);
         }
 
         //if xml file does not exist, extract gz file 
-        if(!fs.existsSync(nowDownloadPath + filenamexml)){
+        if(!fs.existsSync(this.getNowCachePath() + filenamexml)){
             const unzip = zlib.createUnzip();
-            const reader = fs.createReadStream(nowDownloadPath + filenamegz);
-            const writer = fs.createWriteStream(nowDownloadPath + filenamexml);
+            const reader = fs.createReadStream(this.getNowCachePath() + filenamegz);
+            const writer = fs.createWriteStream(this.getNowCachePath() + filenamexml);
             await streamPipeline(reader.pipe(unzip), writer);
         }
 
         //if json file does not exist, convert xml file to json
-        if(!fs.existsSync(nowDownloadPath + filenamejson)){
-            let xml = fs.readFileSync(nowDownloadPath + filenamexml)
+        if(!fs.existsSync(this.getNowCachePath() + filenamejson)){
+            let xml = fs.readFileSync(this.getNowCachePath() + filenamexml)
             let json = await xml2js.parseStringPromise(xml)
-            fs.writeFileSync(nowDownloadPath + filenamejson, JSON.stringify(json))
+            fs.writeFileSync(this.getNowCachePath() + filenamejson, JSON.stringify(json))
         }
 
-        return nowDownloadPath + filenamejson
+        return this.getNowCachePath() + filenamejson
     }
 
-    getAidByTitle(title: string){
+    getAidByTitle(title: string): number | null{
         this.checkAll()
         let obj = this.inMemoryJson.find((titleObj) => titleObj.title == title)
         return obj ? obj.aid : null
     }
 
-    searchTitle(title: string){
+    searchTitle(title: string): AnimeTitle[]{
         this.checkAll()
 
-        return this.miniSearch.search(title, {
+        const miniSearchResult = this.miniSearch.search(title, {
             fuzzy: 0.2
         })
+
+        let results: AnimeTitle[] = []
+        for(let result of miniSearchResult){
+            let obj = this.inMemoryJson.find((titleObj) => titleObj.hash == result.id)
+            if(obj) results.push(obj)
+        }
+
+        return results
     }
 
-    searchTitleAutoSuggestions(title: string){
+    suggestTitle(title: string): Suggestion[]{
         this.checkAll()
 
         return this.miniSearch.autoSuggest(title, {
@@ -204,13 +179,13 @@ export class KSAniDB{
         })
     }
 
-    getTitlesByAid(aid: number){
+    getTitlesByAid(aid: number): AnimeTitle[]{
         this.checkAll()
         let titles = this.inMemoryJson.filter((titleObj) => titleObj.aid == aid)
         return titles
     }
 
-    getTitles(title: string, lang?: string, type?: string){
+    getTitles(title: string, lang?: string, type?: string): AnimeTitle[]{
         this.checkAll()
         const aid = this.getAidByTitle(title)
 
@@ -222,6 +197,6 @@ export class KSAniDB{
             return titles
         }
 
-        return null
+        return []
     }
 }
