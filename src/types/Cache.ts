@@ -1,3 +1,6 @@
+import { RateLimit } from "./RateLimit"
+
 export type Cache = {
-    path: string
+    path: string,
+    rateLimit: RateLimit
 }

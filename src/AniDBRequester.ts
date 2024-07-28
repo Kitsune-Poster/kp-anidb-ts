@@ -2,6 +2,9 @@ import { Download } from "./types/Download";
 import { Cache } from "./types/Cache";
 import { HttpCache } from "./HttpCache";
 import * as fs from 'fs';
+import { Mixin } from 'ts-mixer';
+import { HttpRateLimit } from "./HttpRateLimit";
+import { CacheResponse } from "./types/CacheResponse";
 
 export type AniDBRequesterConfig = { client: string, clientver: number, protover: number, download: Download, cache: Cache, domain: string }
 
@@ -12,13 +15,16 @@ function getNowCachePath(cache: Cache){
 /**
  * An abstract class that provides the base for all AniDB requesters.
  * It's basically a class that provides a constructor with every required configuration to interact with the AniDB API.
+ * 
+ * It provides a base for caching and rate limiting requests.
  */
-export abstract class AniDBRequester extends HttpCache {
+export abstract class AniDBRequester extends Mixin(HttpCache, HttpRateLimit) {
     constructor(
         protected config: AniDBRequesterConfig
     ){
         super({
-            path: getNowCachePath(config.cache)
+            path: getNowCachePath(config.cache),
+            rateLimit: config.cache.rateLimit
         })
 
         function removeSlash(path: string){
@@ -35,4 +41,41 @@ export abstract class AniDBRequester extends HttpCache {
     protected getNowCachePath = () => { return getNowCachePath(this.config.cache) }
 
     protected isNowCachePathExists = () => { return fs.existsSync(this.getNowCachePath()) }
+
+    protected async fetch(url: string | URL | globalThis.Request, init?: RequestInit){
+        let stringUrl = ''
+        switch(typeof url){
+            case 'string':
+                stringUrl = url
+                break
+            case 'object':
+                if(url instanceof URL){
+                    stringUrl = url.toString()
+                }else if(url instanceof globalThis.Request){
+                    stringUrl = url.url
+                }
+                break
+        }
+
+        const oldResponse = this.getCachedResponse(stringUrl)
+        if(oldResponse){
+            console.info(`Using cached response for ${stringUrl}`)
+            return oldResponse
+        }
+        
+        this.verifyRateLimit()
+
+        this.registerRequest()
+        
+        console.info(`Fetching ${stringUrl}`)
+        const response = await fetch(url, init)
+        const cacheResponse: CacheResponse = {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            body: await response.text()
+        }
+        this.cacheResponse(stringUrl, cacheResponse)
+        return cacheResponse
+    }
 }

@@ -16,13 +16,25 @@ const main = async () => {
     let db = KSAniDB.builder()
         .setClient(client)
         .setClientVer(parseInt(clientVer))
+        .setRateLimit(1, 2000)
         .build()
 
     await db.init()
 
-    const titles = db.searchTitle("Utawarerum")
-    const details = await titles[0].fetchDetails()
-    console.log(details.anime.creators[0].name[0].$.type)
+    const utawarerumonoSearch = db.searchTitle("Utawarerumono")
+    await utawarerumonoSearch[0].fetchDetails()
+
+    const deathNoteSearch = db.searchTitle("Death Note")
+    await deathNoteSearch[0].fetchDetails()
+
+    const narutoSearch = db.searchTitle("Naruto")
+    await narutoSearch[0].fetchDetails()
+
+    const onePieceSearch = db.searchTitle("One Piece")
+    await onePieceSearch[0].fetchDetails()
+    
+    const bleachSearch = db.searchTitle("Bleach")
+    await bleachSearch[0].fetchDetails()
 }
 
 main()
