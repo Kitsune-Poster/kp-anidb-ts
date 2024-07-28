@@ -14,16 +14,11 @@ export class AnimeTitle extends AniDBRequester {
         super(config)
     }
 
-    async fetchDetails(): Promise<AnimeDetailOriginalJson>{
-        let url = `${this.getBaseUrl()}&request=anime&aid=${this.aid}`
-        let response = await this.fetch(url)
-        let xml = response.body
-        let json = await xml2js.parseStringPromise(xml)
-
-        if(json.error){
-            throw new Error(json.error)
-        }
-
-        return json as AnimeDetailOriginalJson
+    /**
+     * Allows retrieval of non-file or episode related information for a specific anime by AID (AniDB anime id).
+     * @returns 
+     */
+    async fetchDetails(){
+        return this.fetchAnimeDetails(this.aid)
     }
 }
