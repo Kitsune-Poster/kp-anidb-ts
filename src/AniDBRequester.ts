@@ -1,17 +1,20 @@
 import { Download } from "./types/Download";
-import { Cache } from "./types/Cache";
-import { HttpCache } from "./HttpCache";
+import { HttpConfig } from "./types/HttpConfig";
 import * as fs from 'fs';
 import { Mixin } from 'ts-mixer';
-import { HttpRateLimit } from "./HttpRateLimit";
 import { CacheResponse } from "./types/CacheResponse";
 import xml2js from 'xml2js';
 import { AnimeDetailOriginalJson } from "./types/AnimeDetailOriginalJson";
+import { AnimeHotOriginalJson } from "./types/AnimeHotOriginalJson";
+import { AnimeMainOriginalJson } from "./types/AnimeMainOriginalJson";
+import { AnimeRandomSimilarOriginalJson } from "./types/AnimeRandomSimilarOriginalJson";
+import { AnimeFetchRecommendationOriginalJson } from "./types/AnimeFetchRecommendationOriginalJson";
+import { HttpUtils } from "@nathangasc/http-utils-ts";
 
-export type AniDBRequesterConfig = { client: string, clientver: number, protover: number, download: Download, cache: Cache, domain: string }
+export type AniDBRequesterConfig = { client: string, clientver: number, protover: number, download: Download, httpConfig: HttpConfig, domain: string }
 
-function getNowCachePath(cache: Cache){
-    return cache.path + "/" + new Date().getFullYear() + "." + (new Date().getMonth() + 1) + "." + new Date().getDate() + "/"
+function getNowCachePath(config: HttpConfig){
+    return config.cache.path + "/" + new Date().getFullYear() + "." + (new Date().getMonth() + 1) + "." + new Date().getDate() + "/"
 }
 
 /**
@@ -20,69 +23,26 @@ function getNowCachePath(cache: Cache){
  * 
  * It provides a base for caching and rate limiting requests.
  */
-export abstract class AniDBRequester extends Mixin(HttpCache, HttpRateLimit) {
+export abstract class AniDBRequester extends HttpUtils {
     constructor(
-        protected config: AniDBRequesterConfig
+        protected aniDBRequesterConfig: AniDBRequesterConfig
     ){
-        super({
-            path: getNowCachePath(config.cache),
-            rateLimit: config.cache.rateLimit
-        })
+        super(aniDBRequesterConfig.httpConfig)
 
         function removeSlash(path: string){
             return path.replace(/\/$/, "")
         }
 
-        this.config.download.path = removeSlash(this.config.download.path)
-        this.config.cache.path = removeSlash(this.config.cache.path)
-        this.config.domain = removeSlash(this.config.domain)
+        this.aniDBRequesterConfig.download.path = removeSlash(this.aniDBRequesterConfig.download.path)
+        this.aniDBRequesterConfig.httpConfig.cache.path = removeSlash(this.aniDBRequesterConfig.httpConfig.cache.path)
+        this.aniDBRequesterConfig.domain = removeSlash(this.aniDBRequesterConfig.domain)
     }
 
-    protected getBaseUrl = () => { return `${this.config.domain}/httpapi?client=${this.config.client}&clientver=${this.config.clientver}&protover=${this.config.protover}` }
+    protected getBaseUrl = () => { return `${this.aniDBRequesterConfig.domain}/httpapi?client=${this.aniDBRequesterConfig.client}&clientver=${this.aniDBRequesterConfig.clientver}&protover=${this.aniDBRequesterConfig.protover}` }
 
-    protected getNowCachePath = () => { return getNowCachePath(this.config.cache) }
+    protected getNowCachePath = () => { return getNowCachePath(this.aniDBRequesterConfig.httpConfig) }
 
     protected isNowCachePathExists = () => { return fs.existsSync(this.getNowCachePath()) }
-
-    protected async fetch(url: string | URL | globalThis.Request, init?: RequestInit, noCache: boolean = false): Promise<CacheResponse>{
-        let stringUrl = ''
-        switch(typeof url){
-            case 'string':
-                stringUrl = url
-                break
-            case 'object':
-                if(url instanceof URL){
-                    stringUrl = url.toString()
-                }else if(url instanceof globalThis.Request){
-                    stringUrl = url.url
-                }
-                break
-        }
-
-        const oldResponse = this.getCachedResponse(stringUrl)
-        if(oldResponse && !noCache){
-            console.info(`Using cached response for ${stringUrl}`)
-            return oldResponse
-        }
-        
-        this.verifyRateLimit()
-
-        this.registerRequest()
-        
-        console.info(`Fetching ${stringUrl}`)
-        const response = await fetch(url, init)
-        const cacheResponse: CacheResponse = {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
-            body: await response.text()
-        }
-
-        if(!noCache)
-            this.cacheResponse(stringUrl, cacheResponse)
-        
-        return cacheResponse
-    }
 
     /**
      * Allows retrieval of non-file or episode related information for a specific anime by AID (AniDB anime id).
@@ -109,7 +69,7 @@ export abstract class AniDBRequester extends Mixin(HttpCache, HttpRateLimit) {
      * 
      * //TODO: Add a type for this return
      */
-    protected async fetchRecommendation(): Promise<any>{
+    protected async fetchRecommendation(): Promise<AnimeFetchRecommendationOriginalJson>{
         let url = `${this.getBaseUrl()}&request=randomrecommendation`
         let response = await this.fetch(url, undefined, true)
         let xml = response.body
@@ -130,7 +90,7 @@ export abstract class AniDBRequester extends Mixin(HttpCache, HttpRateLimit) {
      * 
      * //TODO: Add a type for this return
      */
-    protected async fetchRandomSimilar(): Promise<any>{
+    protected async fetchRandomSimilar(): Promise<AnimeRandomSimilarOriginalJson>{
         let url = `${this.getBaseUrl()}&request=randomsimilar`
         let response = await this.fetch(url, undefined, true)
         let xml = response.body
@@ -151,9 +111,9 @@ export abstract class AniDBRequester extends Mixin(HttpCache, HttpRateLimit) {
      * 
      * //TODO: Add a type for this return
      */
-    protected async fetchHotAnime(): Promise<any>{
+    protected async fetchHotAnime(): Promise<AnimeHotOriginalJson>{
         let url = `${this.getBaseUrl()}&request=hotanime`
-        let response = await this.fetch(url, undefined, true)
+        let response = await this.fetch(url, undefined, false)
         let xml = response.body
         let json = await xml2js.parseStringPromise(xml)
 
@@ -171,9 +131,9 @@ export abstract class AniDBRequester extends Mixin(HttpCache, HttpRateLimit) {
      * 
      * //TODO: Add a type for this return
      */
-    protected async fetchMain(): Promise<any>{
+    protected async fetchMain(): Promise<AnimeMainOriginalJson>{
         let url = `${this.getBaseUrl()}&request=main`
-        let response = await this.fetch(url, undefined, true)
+        let response = await this.fetch(url, undefined, false)
         let xml = response.body
         let json = await xml2js.parseStringPromise(xml)
 

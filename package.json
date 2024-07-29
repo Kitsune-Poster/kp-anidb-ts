@@ -1,17 +1,19 @@
 {
   "name": "kp-anidb-ts",
   "version": "1.0.0",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc",
     "clean": "rimraf dist",
-    "test": "npm run clean && npm run build && ts-node demo/index.ts"
+    "test": "npm run clean && npm run build && ts-node demo/index.ts",
+    "demo": "npm run test"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@nathangasc/http-utils-ts": "^1.0.2",
     "configparser": "^0.3.10",
     "hash-it": "^6.0.0",
     "minisearch": "^7.1.0",

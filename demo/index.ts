@@ -24,7 +24,8 @@ const main = async () => {
     const utawarerumonoSearch = db.searchTitle("Utawarerumono")
     await utawarerumonoSearch[0].fetchDetails()
     
-    const hotAnime = await db.fetchHotAnime()
+    const main = await db.fetchRecommendation()
+    console.log(main.randomrecommendation.recommendation[0].anime[0].ratings[0])
 }
 
 main()

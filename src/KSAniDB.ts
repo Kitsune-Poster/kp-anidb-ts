@@ -10,6 +10,10 @@ import { AnimeTitleOriginalJson } from './types/AnimeTitleOriginalJson';
 import { AnimeTitleTransformedJson } from './types/AnimeTitleTransformedJson';
 import { AnimeTitle } from './AnimeTitle';
 import { AniDBRequester } from './AniDBRequester';
+import { AnimeHotOriginalJson } from './types/AnimeHotOriginalJson';
+import { AnimeMainOriginalJson } from './types/AnimeMainOriginalJson';
+import { AnimeRandomSimilarOriginalJson } from './types/AnimeRandomSimilarOriginalJson';
+import { AnimeFetchRecommendationOriginalJson } from './types/AnimeFetchRecommendationOriginalJson';
 
 const streamPipeline = promisify(pipeline);
 
@@ -67,7 +71,7 @@ export class KSAniDB extends AniDBRequester {
             for (let title of anime.title) {
                 let id = hash({ aid: aid, title: title._, type: title.$.type, lang: title.$["xml:lang"] })
                 transformed.push(new AnimeTitle(
-                    this.config,
+                    this.aniDBRequesterConfig,
                     id,
                     aid,
                     title._,
@@ -115,12 +119,12 @@ export class KSAniDB extends AniDBRequester {
         let filenamegz = filenamexml + ".gz"
         let filenamejson = filename + ".json"
 
-        if (!fs.existsSync(this.config.download.path)) fs.mkdirSync(this.config.download.path)
+        if (!fs.existsSync(this.aniDBRequesterConfig.download.path)) fs.mkdirSync(this.aniDBRequesterConfig.download.path)
         if (!fs.existsSync(this.getNowCachePath())) fs.mkdirSync(this.getNowCachePath())
 
         //if gz file does not exist, download it
         if (!fs.existsSync(this.getNowCachePath() + filenamegz)) {
-            const response = await fetch(this.config.download.url)
+            const response = await fetch(this.aniDBRequesterConfig.download.url)
             if (!response.ok) throw new Error(`unexpected response ${response.statusText}`)
             const body = response.body
             if (!body) throw new Error("No body")
@@ -210,7 +214,7 @@ export class KSAniDB extends AniDBRequester {
      * results here to match random results there.
      * @returns 
      */
-    async fetchRecommendation(): Promise<any> {
+    async fetchRecommendation(): Promise<AnimeFetchRecommendationOriginalJson> {
         return super.fetchRecommendation()
     }
 
@@ -220,7 +224,7 @@ export class KSAniDB extends AniDBRequester {
      * here to match random results there.
      * @returns 
      */
-    async fetchRandomSimilar(): Promise<any> {
+    async fetchRandomSimilar(): Promise<AnimeRandomSimilarOriginalJson> {
         return super.fetchRandomSimilar()
     }
 
@@ -230,7 +234,7 @@ export class KSAniDB extends AniDBRequester {
      * page (with some possible variance of a few hours, depending on cache life.)
      * @returns 
      */
-    async fetchHotAnime(): Promise<any> {
+    async fetchHotAnime(): Promise<AnimeHotOriginalJson> {
         return super.fetchHotAnime()
     }
 
@@ -239,7 +243,7 @@ export class KSAniDB extends AniDBRequester {
      * Use this command instead of scraping the HTML, and if you need more than one of the individual replies.
      * @returns 
      */
-    async fetchMain(): Promise<any> {
+    async fetchMain(): Promise<AnimeMainOriginalJson> {
         return super.fetchMain()
     }
 }

@@ -1,7 +1,7 @@
 import { KSAniDB } from "../KSAniDB"
 import { KSAniDBBuilderClientVer } from "./KSAniDBBuilderClientVer"
 import { Download } from "../types/Download"
-import { Cache } from "../types/Cache"
+import { HttpConfig } from "../types/HttpConfig"
 
 /**
  * A class that builds a KSAniDB object with optional parameters
@@ -16,8 +16,10 @@ export class KSAniDBBuilderOptional{
         url: new URL('http://anidb.net/api/anime-titles.xml.gz'),
         path: "./cache"
     }
-    private cache: Cache = {
-        path: "./cache",
+    private cache: HttpConfig = {
+        cache: {
+            path: "./cache"
+        },
         rateLimit: {
             maxRequest: 1,
             perMiliseconds: 2000
@@ -74,7 +76,7 @@ export class KSAniDBBuilderOptional{
      * @returns 
      */
     setCachePath(path: string){
-        this.cache.path = path
+        this.cache.cache.path = path
         return this
     }
 
@@ -99,7 +101,7 @@ export class KSAniDBBuilderOptional{
             clientver: KSAniDBBuilderClientVer.clientver,
             protover: this.protover,
             download: this.download,
-            cache: this.cache,
+            httpConfig: this.cache,
             domain: this.domain
         })
     }
