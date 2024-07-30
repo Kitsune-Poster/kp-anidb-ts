@@ -1,6 +1,6 @@
 {
   "name": "@nathangasc/kp-anidb-ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
@@ -12,6 +12,17 @@
   "author": "Nathan Gasc",
   "license": "ISC",
   "description": "AniDB API client for TypeScript with cache and limit rate",
+  "keywords": [
+    "anidb",
+    "kitsune poster",
+    "anime",
+    "typescript",
+    "api"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NathanGASC/kp-anidb-ts"
+  },
   "dependencies": {
     "@nathangasc/http-utils-ts": "^1.0.2",
     "configparser": "^0.3.10",
