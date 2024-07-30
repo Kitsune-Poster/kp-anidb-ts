@@ -1,17 +1,17 @@
 {
-  "name": "kp-anidb-ts",
+  "name": "@nathangasc/kp-anidb-ts",
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "clean": "rimraf dist",
     "test": "npm run clean && npm run build && ts-node demo/index.ts",
     "demo": "npm run test"
   },
-  "author": "",
+  "author": "Nathan Gasc",
   "license": "ISC",
-  "description": "",
+  "description": "AniDB API client for TypeScript with cache and limit rate",
   "dependencies": {
     "@nathangasc/http-utils-ts": "^1.0.2",
     "configparser": "^0.3.10",
