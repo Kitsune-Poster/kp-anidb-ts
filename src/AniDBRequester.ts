@@ -74,7 +74,7 @@ export abstract class AniDBRequester extends HttpUtils {
      */
     protected async fetchRecommendation(): Promise<AnimeFetchRecommendationOriginalJson>{
         let path = "&request=randomrecommendation"
-        return await this.fetchWrap(path, true)
+        return await this.fetchWrap(path, false)
     }
 
     /**
@@ -85,7 +85,7 @@ export abstract class AniDBRequester extends HttpUtils {
      */
     protected async fetchRandomSimilar(): Promise<AnimeRandomSimilarOriginalJson>{
         let path = "&request=randomsimilar"
-        return await this.fetchWrap(path, true)
+        return await this.fetchWrap(path, false)
     }
 
     /**
@@ -96,7 +96,7 @@ export abstract class AniDBRequester extends HttpUtils {
      */
     protected async fetchHotAnime(): Promise<AnimeHotOriginalJson>{
         let path = "&request=hotanime"
-        return await this.fetchWrap(path, true)
+        return await this.fetchWrap(path, false)
     }
 
     /**
@@ -106,6 +106,6 @@ export abstract class AniDBRequester extends HttpUtils {
      */
     protected async fetchMain(): Promise<AnimeMainOriginalJson>{
         let path = "&request=main"
-        return await this.fetchWrap(path, true)
+        return await this.fetchWrap(path, false)
     }
 }
