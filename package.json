@@ -24,7 +24,7 @@
     "url": "https://github.com/NathanGASC/kp-anidb-ts"
   },
   "dependencies": {
-    "@nathangasc/http-utils-ts": "^1.0.2",
+    "@nathangasc/http-utils-ts": "^1.0.4",
     "configparser": "^0.3.10",
     "hash-it": "^6.0.0",
     "minisearch": "^7.1.0",

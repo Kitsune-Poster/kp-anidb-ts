@@ -16,16 +16,22 @@ const main = async () => {
     let db = KSAniDB.builder()
         .setClient(client)
         .setClientVer(parseInt(clientVer))
-        .setRateLimit(1, 2000)
+        .setRateLimit(1, 2000, true)
+        .setCache("./cache", 1000 * 60 * 60 * 24, true)
         .build()
 
     await db.init()
 
     const utawarerumonoSearch = db.searchTitle("Utawarerumono")
-    await utawarerumonoSearch[0].fetchDetails()
+    let utawarerumono = await utawarerumonoSearch[0].fetchDetails()
+    let rating = utawarerumono.anime.ratings[0].permanent[0]._
+    console.log(`Utawarerumono rating: ${rating}`)
     
     const main = await db.fetchRecommendation()
-    console.log(main.randomrecommendation.recommendation[0].anime[0].ratings[0])
+    const recommendations = main.randomrecommendation.recommendation
+    for(let recommendation of recommendations){
+        console.log(`Recommendation: ${recommendation.anime[0].title[0]._}`)
+    }
 }
 
 main()

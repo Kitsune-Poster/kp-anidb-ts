@@ -1,7 +1,7 @@
+import { HttpConfig } from "@nathangasc/http-utils-ts/dist/types/HttpConfig"
 import { KSAniDB } from "../KSAniDB"
-import { KSAniDBBuilderClientVer } from "./KSAniDBBuilderClientVer"
 import { Download } from "../types/Download"
-import { HttpConfig } from "../types/HttpConfig"
+import { KSAniDBBuilderClientVer } from "./KSAniDBBuilderClientVer"
 
 /**
  * A class that builds a KSAniDB object with optional parameters
@@ -18,11 +18,15 @@ export class KSAniDBBuilderOptional{
     }
     private cache: HttpConfig = {
         cache: {
-            path: "./cache"
+            path: "./cache",
+            durationMiliseconds: 1000 * 60 * 60 * 24,
+            deleteOnExpire: true
+            
         },
         rateLimit: {
             maxRequest: 1,
-            perMiliseconds: 2000
+            perMiliseconds: 2000,
+            deleteOnExpire: true
         }
     }
 
@@ -71,12 +75,18 @@ export class KSAniDBBuilderOptional{
     }
 
     /**
-     * Set the path where the cache will be stored
-     * @param path 
-     * @returns 
+     * Set the cache for the requests to be stored in the given path for the given duration
+     * @param path is the path where the cache will be stored
+     * @param durationMiliseconds is the duration in miliseconds that the cache will be stored
+     * @param deleteOnExpire if the cache should be deleted when it expires
+     * @returns
      */
-    setCachePath(path: string){
-        this.cache.cache.path = path
+    setCache(path: string, durationMiliseconds: number, deleteOnExpire: boolean){
+        this.cache.cache = {
+            path,
+            durationMiliseconds,
+            deleteOnExpire
+        }
         return this
     }
 
@@ -84,11 +94,13 @@ export class KSAniDBBuilderOptional{
      * Set the rate limit for the requests to maxRequest each perMiliseconds (for example, 1 request each 2 seconds)
      * @param maxRequest is the maximum number of requests that can be made in the given time
      * @param perMiliseconds is the time in miliseconds that the maxRequest can be made
+     * @param deleteOnExpire if the cache should be deleted when it expires
      */
-    setRateLimit(maxRequest: number, perMiliseconds: number){
+    setRateLimit(maxRequest: number, perMiliseconds: number, deleteOnExpire: boolean){
         this.cache.rateLimit = {
             maxRequest,
-            perMiliseconds
+            perMiliseconds,
+            deleteOnExpire
         }
         return this
     }
