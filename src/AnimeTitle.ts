@@ -21,4 +21,14 @@ export class AnimeTitle extends AniDBRequester {
     async fetchDetails(){
         return this.fetchAnimeDetails(this.aid)
     }
+
+    data(){
+        return {
+            hash: this.hash,
+            aid: this.aid,
+            title: this.title,
+            type: this.type,
+            lang: this.lang
+        }
+    }
 }
