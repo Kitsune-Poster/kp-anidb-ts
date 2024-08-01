@@ -108,5 +108,6 @@
   },
   "exclude": [
     "demo",
+    "http-utils-ts"
   ]
 }

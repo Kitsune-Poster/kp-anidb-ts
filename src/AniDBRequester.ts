@@ -6,15 +6,11 @@ import { AnimeHotOriginalJson } from "./types/AnimeHotOriginalJson";
 import { AnimeMainOriginalJson } from "./types/AnimeMainOriginalJson";
 import { AnimeRandomSimilarOriginalJson } from "./types/AnimeRandomSimilarOriginalJson";
 import { AnimeFetchRecommendationOriginalJson } from "./types/AnimeFetchRecommendationOriginalJson";
-import { HttpUtils } from "@nathangasc/http-utils-ts";
-import { HttpConfig } from "@nathangasc/http-utils-ts/dist/types/HttpConfig";
+import { HttpUtils } from "./../http-utils-ts/dist/index";
+import { HttpConfig } from "./../http-utils-ts/dist/types/HttpConfig";
 import { Download } from './types/Download';
 
 export type AniDBRequesterConfig = { client: string, clientver: number, protover: number, download: Download, httpConfig: HttpConfig, domain: string }
-
-function getNowCachePath(config: HttpConfig){
-    return config.cache.path + "/" + new Date().getFullYear() + "." + (new Date().getMonth() + 1) + "." + new Date().getDate() + "/"
-}
 
 /**
  * An abstract class that provides the base for all AniDB requesters.
@@ -39,10 +35,6 @@ export abstract class AniDBRequester extends HttpUtils {
     }
 
     protected getBaseUrl = () => { return `${this.aniDBRequesterConfig.domain}/httpapi?client=${this.aniDBRequesterConfig.client}&clientver=${this.aniDBRequesterConfig.clientver}&protover=${this.aniDBRequesterConfig.protover}` }
-
-    protected getNowCachePath = () => { return getNowCachePath(this.aniDBRequesterConfig.httpConfig) }
-
-    protected isNowCachePathExists = () => { return fs.existsSync(this.getNowCachePath()) }
 
     async fetchWrap<T>(path: string, noCache: boolean = false): Promise<T>{
         let url = `${this.getBaseUrl()}${path}`

@@ -1,0 +1,3 @@
+[submodule "http-utils-ts"]
+	path = http-utils-ts
+	url = git@github.com:Kitsune-Poster/http-utils-ts.git

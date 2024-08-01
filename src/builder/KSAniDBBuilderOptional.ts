@@ -1,4 +1,4 @@
-import { HttpConfig } from "@nathangasc/http-utils-ts/dist/types/HttpConfig"
+import { HttpConfig } from "../../http-utils-ts/src/types/HttpConfig"
 import { KSAniDB } from "../KSAniDB"
 import { Download } from "../types/Download"
 import { KSAniDBBuilderClientVer } from "./KSAniDBBuilderClientVer"

@@ -3,11 +3,13 @@
   "version": "1.0.2",
   "main": "dist/index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "build": "npm run clean && tsc",
+    "start": "npm run module && ts-node src/index.ts",
+    "build": "npm run clean && npm run module && tsc",
     "clean": "rimraf dist",
     "test": "npm run clean && npm run build && ts-node demo/index.ts",
-    "demo": "npm run test"
+    "demo": "npm run test",
+    "http-utils-ts": "cd ./http-utils-ts/ && npm i && npm run build && cp-cli ./dist ./../dist/http-utils-ts/dist && cd ./../",
+    "module": "npm run http-utils-ts"
   },
   "author": "Nathan Gasc",
   "license": "ISC",
@@ -24,8 +26,6 @@
     "url": "https://github.com/NathanGASC/kp-anidb-ts"
   },
   "dependencies": {
-    "@nathangasc/http-utils-ts": "^1.0.4",
-    "configparser": "^0.3.10",
     "hash-it": "^6.0.0",
     "minisearch": "^7.1.0",
     "ts-mixer": "^6.0.4",
@@ -35,6 +35,8 @@
     "@types/xml2js": "^0.4.14",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "cp-cli": "^2.0.0",
+    "configparser": "^0.3.10"
   }
 }

@@ -90,18 +90,18 @@ export class KSAniDB extends AniDBRequester {
         }
     }
 
-    private assureAidPresence() {
-        if (!fs.existsSync(this.getNowCachePath() + "anime-titles.json")) {
+    private async assureAidPresence() {
+        if (!fs.existsSync(this.getCacheFolder() + "/anime-titles.json")) {
             this.isInitialized = false
             this.inMemoryJson = []
             this.miniSearch.removeAll()
-            this.init()
+            await this.init()
         }
     }
 
-    private checkAll() {
+    private async checkAll() {
         this.checkInit()
-        this.assureAidPresence()
+        await this.assureAidPresence()
     }
 
     /**
@@ -120,46 +120,46 @@ export class KSAniDB extends AniDBRequester {
         let filenamejson = filename + ".json"
 
         if (!fs.existsSync(this.aniDBRequesterConfig.download.path)) fs.mkdirSync(this.aniDBRequesterConfig.download.path)
-        if (!fs.existsSync(this.getNowCachePath())) fs.mkdirSync(this.getNowCachePath())
+        if (!fs.existsSync(this.getCacheFolder())) fs.mkdirSync(this.getCacheFolder())
 
         //if gz file does not exist, download it
-        if (!fs.existsSync(this.getNowCachePath() + filenamegz)) {
+        if (!fs.existsSync(this.getCacheFolder() + "/" + filenamegz)) {
             const response = await fetch(this.aniDBRequesterConfig.download.url)
             if (!response.ok) throw new Error(`unexpected response ${response.statusText}`)
             const body = response.body
             if (!body) throw new Error("No body")
 
-            const writer = fs.createWriteStream(this.getNowCachePath() + filenamegz)
+            const writer = fs.createWriteStream(this.getCacheFolder() + "/" + filenamegz)
 
             await streamPipeline(response.body, writer);
         }
 
         //if xml file does not exist, extract gz file 
-        if (!fs.existsSync(this.getNowCachePath() + filenamexml)) {
+        if (!fs.existsSync(this.getCacheFolder() + "/" + filenamexml)) {
             const unzip = zlib.createUnzip();
-            const reader = fs.createReadStream(this.getNowCachePath() + filenamegz);
-            const writer = fs.createWriteStream(this.getNowCachePath() + filenamexml);
+            const reader = fs.createReadStream(this.getCacheFolder() + "/" + filenamegz);
+            const writer = fs.createWriteStream(this.getCacheFolder() + "/" + filenamexml);
             await streamPipeline(reader.pipe(unzip), writer);
         }
 
         //if json file does not exist, convert xml file to json
-        if (!fs.existsSync(this.getNowCachePath() + filenamejson)) {
-            let xml = fs.readFileSync(this.getNowCachePath() + filenamexml)
+        if (!fs.existsSync(this.getCacheFolder() + "/" + filenamejson)) {
+            let xml = fs.readFileSync(this.getCacheFolder() + "/" + filenamexml)
             let json = await xml2js.parseStringPromise(xml)
-            fs.writeFileSync(this.getNowCachePath() + filenamejson, JSON.stringify(json))
+            fs.writeFileSync(this.getCacheFolder() + "/" + filenamejson, JSON.stringify(json))
         }
 
-        return this.getNowCachePath() + filenamejson
+        return this.getCacheFolder() + "/" + filenamejson
     }
 
-    getAidByTitle(title: string): number | null {
-        this.checkAll()
+    async getAidByTitle(title: string): Promise<number | null> {
+        await this.checkAll()
         let obj = this.inMemoryJson.find((titleObj) => titleObj.title == title)
         return obj ? obj.aid : null
     }
 
-    searchTitle(title: string): AnimeTitle[] {
-        this.checkAll()
+    async searchTitle(title: string): Promise<AnimeTitle[]> {
+        await this.checkAll()
 
         const miniSearchResult = this.miniSearch.search(title, {
             fuzzy: 0.2
@@ -174,23 +174,23 @@ export class KSAniDB extends AniDBRequester {
         return results
     }
 
-    suggestTitle(title: string): Suggestion[] {
-        this.checkAll()
+    async suggestTitle(title: string): Promise<Suggestion[]> {
+        await this.checkAll()
 
         return this.miniSearch.autoSuggest(title, {
             fuzzy: 0.2
         })
     }
 
-    getTitlesByAid(aid: number): AnimeTitle[] {
-        this.checkAll()
+    async getTitlesByAid(aid: number): Promise<AnimeTitle[]> {
+        await this.checkAll()
         let titles = this.inMemoryJson.filter((titleObj) => titleObj.aid == aid)
         return titles
     }
 
-    getTitlesByTitle(title: string): AnimeTitle[] {
-        this.checkAll()
-        const aid = this.getAidByTitle(title)
+    async getTitlesByTitle(title: string): Promise<AnimeTitle[]> {
+        await this.checkAll()
+        const aid = await this.getAidByTitle(title)
 
         if (aid) {
             let titles = this.getTitlesByAid(aid)
@@ -201,12 +201,10 @@ export class KSAniDB extends AniDBRequester {
         return []
     }
 
-    getTitles(): AnimeTitle[] {
-        this.checkAll()
+    async getTitles(): Promise<AnimeTitle[]> {
+        await this.checkAll()
         return this.inMemoryJson
     }
-
-
 
     /**
      * This command mirrors the type of data provided on the main web page. Use this instead of scraping the HTML. 
