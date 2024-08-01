@@ -26,7 +26,8 @@ export class KSAniDBBuilderOptional{
         rateLimit: {
             maxRequest: 1,
             perMiliseconds: 2000,
-            deleteOnExpire: true
+            deleteOnExpire: true,
+            waitTillLimitReset: true
         }
     }
 
@@ -95,12 +96,14 @@ export class KSAniDBBuilderOptional{
      * @param maxRequest is the maximum number of requests that can be made in the given time
      * @param perMiliseconds is the time in miliseconds that the maxRequest can be made
      * @param deleteOnExpire if the cache should be deleted when it expires
+     * @param waitTillLimitReset if the request should wait until the limit is reset to make the request. If false, the request will throw an error if the limit is reached
      */
-    setRateLimit(maxRequest: number, perMiliseconds: number, deleteOnExpire: boolean){
+    setRateLimit(maxRequest: number, perMiliseconds: number, deleteOnExpire: boolean, waitTillLimitReset: boolean){
         this.cache.rateLimit = {
             maxRequest,
             perMiliseconds,
-            deleteOnExpire
+            deleteOnExpire,
+            waitTillLimitReset
         }
         return this
     }
