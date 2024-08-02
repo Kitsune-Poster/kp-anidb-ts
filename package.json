@@ -1,6 +1,6 @@
 {
   "name": "@nathangasc/kp-anidb-ts",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "scripts": {
     "start": "npm run module && ts-node src/index.ts",
